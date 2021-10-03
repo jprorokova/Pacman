@@ -1,5 +1,6 @@
 import pygame
 from settings import *
+import keyboard
 vec = pygame.math.Vector2
 
 
@@ -8,6 +9,7 @@ class Player:
         self.app = app
         self.starting_pos = [pos.x, pos.y]
         self.grid_pos = pos
+        self.past_path = []
         self.pix_pos = self.get_pix_pos()
         self.direction = vec(1, 0)
         self.stored_direction = None
@@ -15,35 +17,28 @@ class Player:
         self.current_score = 0
         self.speed = 2
         self.lives = 1
+        self.alg = "BFS"
 
-    # def bfs_shortest_path(self, start, goal):
-    #
-    #     grid = [[0 for x in range(28)] for x in range(30)]
-    #     for cell in self.app.walls:
-    #         if cell.x < 28 and cell.y < 30:
-    #             grid[int(cell.y)][int(cell.x)] = 1
-    #     explored = []
-    #
-    #     queue = [(start,[start])]
-    #
-    #
-    #     if start == goal:
-    #         return "That was easy! Start = goal"
-    #
-    #
-    #     while queue:
-    #
-    #         (current,path) = queue.pop(0)
-    #
-    #         explored.append(current)
-    #         neighbours = [[int(current[0]+1),int(current[1])],
-    #                       [int(current[0]-1),int(current[1])],
-    #                       [int(current[0]),int(current[1]+1)],
-    #                       [int(current[0]),int(current[1]-1)]]
-    #
+
+    def change_alg(self):
+        if keyboard.read_key() == "z":
+            if self.alg == "BFS":
+
+                self.alg = "DFS"
+                print("DFS")
+            elif self.alg == "DFS":
+                self.alg = "uniform_cost_search"
+                print("USC")
+            elif self.alg == 'uniform_cost_search':
+                self.alg = "BFS"
+                print("BFS")
+
+
+
 
 
     def update(self):
+
         if self.able_to_move:
             self.pix_pos += self.direction*self.speed
         if self.time_to_move():
@@ -55,7 +50,7 @@ class Player:
                             self.app.cell_width//2)//self.app.cell_width+1
         self.grid_pos[1] = (self.pix_pos[1]-TOP_BOTTOM_BUFFER +
                             self.app.cell_height//2)//self.app.cell_height+1
-        # alg 
+        # alg
 
         if self.on_coin():
             self.eat_coin()
@@ -109,3 +104,26 @@ class Player:
             if vec(self.grid_pos+self.direction) == wall:
                 return False
         return True
+    def get_path(self,goal):
+        next_cell = self.find_next_cell(goal)
+        xdir = next_cell[0]-self.grid_pos[0]
+        ydir = next_cell[1]-self.grid_pos[1]
+        return vec(xdir,ydir)
+
+    def find_next_cell(self, goal):
+        if self.past_path:
+            for p in self.past_path:
+                pygame.draw.rect(self.app.maze,BLACK,p)
+            self.past_path = []
+        path = self.app.alg.BFS(self.grid_pos,goal)
+        print(path)
+        for p in path :
+            self.past_path.append((p[0]*self.app.cell_width,p[1]*self.app.cell_height,
+                                   self.app.cell_width//2,self.app.cell_height//2))
+            pygame.draw.rect(self.app.maze,PLAYER_COLOUR,(p[0]*self.app.cell_width,
+                                                          p[1]*self.app.cell_height,
+                                                          self.app.cell_width//2,self.app.cell_height//2))
+        if len(path)==1:
+            return path[0]
+        else:
+            return path[1]

@@ -1,16 +1,20 @@
 import pygame
 import sys
 import copy
+
+from algorithms import Algs
 from settings import *
 from player_class import *
 from enemy_class import *
 import numpy as np
-
+from algorithms import *
 pygame.init()
 vec = pygame.math.Vector2
 
 
 class App:
+
+
     def __init__(self):
         self.screen = pygame.display.set_mode((WIDTH, HEIGHT))
         self.clock = pygame.time.Clock()
@@ -30,6 +34,7 @@ class App:
         self.draw_maze()
         self.player = Player(self, vec(self.p_pos))
         self.make_enemies()
+        self.alg = Algs(self.walls)
 
 
     def run(self):
@@ -191,6 +196,11 @@ class App:
                     self.player.move(vec(0, -1))
                 if event.key == pygame.K_DOWN:
                     self.player.move(vec(0, 1))
+                if event.key == pygame.K_z:
+                    self.player.change_alg()
+
+
+
 
     def playing_update(self):
         self.player.update()

@@ -1,5 +1,8 @@
 import pygame
 import random
+import numpy as np
+import time
+
 from settings import *
 vec = pygame.math.Vector2
 
@@ -13,12 +16,18 @@ class Enemy:
         self.number = number
         self.colour = self.set_colour()
         self.direction = vec(0, 0)
-
+        self.prev_path = []
+        self.path = []
         self.target = None
         self.speed = 1
 
+        self.colour_path = list(np.random.choice(range(40,256), size=3))
+
     def update(self):
+        self.draw_path(BLACK)
+
         self.target = self.set_target()
+
         if self.target != self.grid_pos:
             self.pix_pos += self.direction * self.speed
             if self.time_to_move():
@@ -29,12 +38,12 @@ class Enemy:
                             self.app.cell_width//2)//self.app.cell_width+1
         self.grid_pos[1] = (self.pix_pos[1]-TOP_BOTTOM_BUFFER +
                             self.app.cell_height//2)//self.app.cell_height+1
+        self.find_path(self.app.player.grid_pos)
+        self.draw_path(self.colour_path)
 
     def draw(self):
         pygame.draw.circle(self.app.screen, self.colour,
                            (int(self.pix_pos.x), int(self.pix_pos.y)), self.radius)
-
-
 
     def set_target(self):
         # if self.personality == "speedy" or self.personality == "slow":
@@ -61,17 +70,53 @@ class Enemy:
     def move(self):
         self.direction = self.get_random_direction()
 
-
     def get_path_direction(self, target):
-        next_cell = self.find_next_cell_in_path(target)
+        next_cell = self.find_path(target)[1]
         xdir = next_cell[0] - self.grid_pos[0]
         ydir = next_cell[1] - self.grid_pos[1]
         return vec(xdir, ydir)
 
-    def find_next_cell_in_path(self, target):
-        path = self.BFS([int(self.grid_pos.x), int(self.grid_pos.y)], [
-                        int(target[0]), int(target[1])])
-        return path[1]
+    def find_path(self, target):
+
+
+        if self.app.player.alg == "DFS":
+            start = time.time()
+
+
+            self.path = self.app.alg.DFS([int(self.grid_pos[0]),int(self.grid_pos[1])],
+                                    [int(target[0]),int(target[1])])
+            stop = time.time()
+            print("DFS")
+
+        if self.app.player.alg == "BFS":
+            start = time.time()
+            self.path = self.app.alg.BFS([int(self.grid_pos[0]), int(self.grid_pos[1])],
+                                    [int(target[0]), int(target[1])])
+            stop = time.time()
+            print("BFS")
+
+        if self.app.player.alg == "uniform_cost_search":
+            start = time.time()
+            self.path = self.app.alg.uniform_cost_search([int(self.grid_pos[0]), int(self.grid_pos[1])],
+                                         [int(target[0]), int(target[1])])
+            stop = time.time()
+            print("UCS")
+        print(stop-start)
+
+        # path = self.BFS([int(self.grid_pos.x), int(self.grid_pos.y)], [
+        #                 int(target[0]), int(target[1])])
+
+
+
+    def draw_path(self,COLOUR):
+        # path = self.find_path(self.app.player.grid_pos)
+        # if COLOUR == 'rand':
+        #     COLOUR  = list(np.random.choice(range(25,256), size=3))
+        # else:
+        #     COLOUR = BLACK
+        for xidx, yidx in self.path:
+            pygame.draw.rect(self.app.background, COLOUR, (xidx * self.app.cell_width,  yidx* self.app.cell_height,
+                                                        self.app.cell_width, self.app.cell_height))
 
     def BFS(self, start, target):
         grid = [[0 for x in range(28)] for x in range(30)]
@@ -135,4 +180,9 @@ class Enemy:
             return (189, 29, 29)
         if self.number == 3:
             return (215, 159, 33)
+
+
+
+
+
 
